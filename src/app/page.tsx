@@ -43,15 +43,27 @@ export default function Home() {
   const [editAssignee, setEditAssignee] = useState<Assignee>("me");
   const [editStatus, setEditStatus] = useState<TaskStatus>("todo");
 
+  const [query, setQuery] = useState("");
+  const [assigneeFilter, setAssigneeFilter] = useState<"all" | Assignee>("all");
+
+  const filteredTasks = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return tasks.filter((task) => {
+      const matchesAssignee = assigneeFilter === "all" || task.assignee === assigneeFilter;
+      const matchesQuery = !q || task.title.toLowerCase().includes(q) || (task.description ?? "").toLowerCase().includes(q);
+      return matchesAssignee && matchesQuery;
+    });
+  }, [tasks, query, assigneeFilter]);
+
   const grouped = useMemo(() => {
     return statusColumns.reduce<Record<TaskStatus, Task[]>>(
       (acc, column) => {
-        acc[column.key] = tasks.filter((task) => task.status === column.key);
+        acc[column.key] = filteredTasks.filter((task) => task.status === column.key);
         return acc;
       },
       { todo: [], in_progress: [], done: [] },
     );
-  }, [tasks]);
+  }, [filteredTasks]);
 
   const onCreateTask = async (event: FormEvent) => {
     event.preventDefault();
@@ -122,6 +134,21 @@ export default function Home() {
       <NavTabs />
 
       <form onSubmit={onCreateTask} className={styles.createForm}>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search tasks"
+          aria-label="Search tasks"
+        />
+        <select
+          value={assigneeFilter}
+          onChange={(e) => setAssigneeFilter(e.target.value as "all" | Assignee)}
+          aria-label="Filter assignee"
+        >
+          <option value="all">All</option>
+          <option value="me">Assigned to Me</option>
+          <option value="you">Assigned to You</option>
+        </select>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}

@@ -7,7 +7,17 @@ import { NavTabs } from "../components/NavTabs";
 
 export default function CalendarPage() {
   const rawItems = useQuery("calendar:list" as never);
+  const [query, setQuery] = useState("");
   const items = useMemo(() => (rawItems ?? []) as any[], [rawItems]);
+  const filteredItems = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) =>
+      item.title.toLowerCase().includes(q) ||
+      (item.description ?? "").toLowerCase().includes(q) ||
+      (item.source ?? "").toLowerCase().includes(q)
+    );
+  }, [items, query]);
   const createItem = useMutation("calendar:create" as never);
   const updateItem = useMutation("calendar:update" as never);
 
@@ -66,6 +76,11 @@ export default function CalendarPage() {
 
       <form onSubmit={onCreate} className={styles.createForm}>
         <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search events"
+        />
+        <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Event title"
@@ -97,7 +112,7 @@ export default function CalendarPage() {
             <span>{items.length}</span>
           </div>
           <div className={styles.taskList}>
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <article key={item._id} className={styles.taskCard}>
                 <div className={styles.taskTopRow}>
                   <h3>{item.title}</h3>
@@ -112,7 +127,7 @@ export default function CalendarPage() {
                 </div>
               </article>
             ))}
-            {items.length === 0 && <div className={styles.empty}>No scheduled tasks.</div>}
+            {filteredItems.length === 0 && <div className={styles.empty}>No scheduled tasks.</div>}
           </div>
         </div>
       </section>

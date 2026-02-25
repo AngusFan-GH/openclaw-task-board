@@ -7,7 +7,17 @@ import { NavTabs } from "../components/NavTabs";
 
 export default function MemoryPage() {
   const rawItems = useQuery("memories:list" as never);
+  const [query, setQuery] = useState("");
   const items = useMemo(() => (rawItems ?? []) as any[], [rawItems]);
+  const filteredItems = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) =>
+      item.title.toLowerCase().includes(q) ||
+      item.content.toLowerCase().includes(q) ||
+      (item.tags ?? []).join(",").toLowerCase().includes(q)
+    );
+  }, [items, query]);
   const createItem = useMutation("memories:create" as never);
   const updateItem = useMutation("memories:update" as never);
 
@@ -68,6 +78,11 @@ export default function MemoryPage() {
 
       <form onSubmit={onCreate} className={styles.createForm}>
         <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search memories"
+        />
+        <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Title"
@@ -94,7 +109,7 @@ export default function MemoryPage() {
             <span>{items.length}</span>
           </div>
           <div className={styles.taskList}>
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <article key={item._id} className={styles.taskCard}>
                 <div className={styles.taskTopRow}>
                   <h3>{item.title}</h3>
@@ -109,7 +124,7 @@ export default function MemoryPage() {
                 </div>
               </article>
             ))}
-            {items.length === 0 && <div className={styles.empty}>No memories yet.</div>}
+            {filteredItems.length === 0 && <div className={styles.empty}>No memories yet.</div>}
           </div>
         </div>
       </section>
