@@ -56,6 +56,12 @@
   border: 1px solid #cbd5e1;
   border-radius: 12px;
   padding: 0.85rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.columnActive {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
 .columnHeader {

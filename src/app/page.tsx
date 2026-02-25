@@ -93,9 +93,12 @@ export default function Home() {
     event.dataTransfer.effectAllowed = "move";
   };
 
+  const [dragOver, setDragOver] = useState<TaskStatus | null>(null);
+
   const onDrop = async (event: React.DragEvent<HTMLDivElement>, status: TaskStatus) => {
     event.preventDefault();
     const taskId = event.dataTransfer.getData("text/plain");
+    setDragOver(null);
     if (!taskId) return;
     await moveTask({ id: taskId as never, status });
   };
@@ -104,6 +107,9 @@ export default function Home() {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   };
+
+  const onDragEnter = (status: TaskStatus) => setDragOver(status);
+  const onDragLeave = () => setDragOver(null);
 
   const openEdit = (task: Task) => {
     setEditing(task);
@@ -177,9 +183,11 @@ export default function Home() {
         {statusColumns.map((column) => (
           <div
             key={column.key}
-            className={styles.column}
+            className={`${styles.column} ${dragOver === column.key ? styles.columnActive : ""}`}
             onDrop={(event) => onDrop(event, column.key)}
             onDragOver={onDragOver}
+            onDragEnter={() => onDragEnter(column.key)}
+            onDragLeave={onDragLeave}
           >
             <div className={styles.columnHeader}>
               <h2>{column.label}</h2>
