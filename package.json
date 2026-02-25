@@ -4,11 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "convex:dev": "convex dev",
+    "convex:deploy": "convex deploy",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "convex": "^1.25.4",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
