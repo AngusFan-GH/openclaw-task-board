@@ -56,6 +56,7 @@ export default function CalendarPage() {
 
   const saveEdit = async () => {
     if (!editing) return;
+    if (!editTitle.trim() || !editScheduledFor) return;
     await updateItem({
       id: editing._id as never,
       title: editTitle.trim(),
