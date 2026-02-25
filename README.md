@@ -4,12 +4,10 @@ A realtime task board built with Next.js App Router and Convex.
 
 ## Features
 
-- Track tasks with status: `todo`, `in_progress`, `done`
-- Track assignee: `me` vs `you`
-- Create tasks with title, optional description, and assignee
-- Move tasks across board columns
-- Reassign tasks between `me` and `you`
-- Realtime board updates via Convex subscriptions
+- **Task Board**: status (`todo`, `in_progress`, `done`) + assignee (`me` / `you`)
+- **Calendar**: scheduled tasks & cron jobs timeline
+- **Memory**: searchable memory library (title/content/tags)
+- Realtime updates via Convex subscriptions
 
 ## Tech Stack
 

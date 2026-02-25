@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Task Board",
-  description: "Realtime task board powered by Next.js and Convex",
+  title: "OpenClaw Mission Control",
+  description: "Mission control for tasks, calendar, and memory",
 };
 
 export default function RootLayout({

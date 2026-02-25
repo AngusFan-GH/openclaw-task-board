@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import styles from "./page.module.css";
+import { NavTabs } from "./components/NavTabs";
 
 type TaskStatus = "todo" | "in_progress" | "done";
 type Assignee = "me" | "you";
@@ -90,9 +91,10 @@ export default function Home() {
   return (
     <main className={styles.page}>
       <section className={styles.header}>
-        <h1>Task Board</h1>
-        <p>Realtime collaboration board with Convex.</p>
+        <h1>Mission Control</h1>
+        <p>Tasks, calendar, and memory in one place.</p>
       </section>
+      <NavTabs />
 
       <form onSubmit={onCreateTask} className={styles.createForm}>
         <input
