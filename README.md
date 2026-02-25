@@ -64,3 +64,14 @@ npm run dev
 
 - Run `npx convex dev` whenever developing Convex functions to keep generated files up-to-date.
 - If `NEXT_PUBLIC_CONVEX_URL` is missing, the app throws an explicit startup error.
+
+## Task sync (CLI)
+
+To add tasks programmatically (e.g., from automation):
+
+```bash
+CONVEX_URL=<your_convex_url> npm run task:add "Title" "optional description" me
+```
+
+- `me` or `you` controls the assignee.
+- Tasks are created in `todo` status.

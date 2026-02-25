@@ -8,7 +8,8 @@
     "convex:deploy": "convex deploy",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "task:add": "node scripts/add_task.mjs"
   },
   "dependencies": {
     "convex": "^1.25.4",
