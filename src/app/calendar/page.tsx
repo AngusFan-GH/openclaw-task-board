@@ -9,11 +9,17 @@ export default function CalendarPage() {
   const rawItems = useQuery("calendar:list" as never);
   const items = useMemo(() => (rawItems ?? []) as any[], [rawItems]);
   const createItem = useMutation("calendar:create" as never);
+  const updateItem = useMutation("calendar:update" as never);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
   const [source, setSource] = useState("");
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editScheduledFor, setEditScheduledFor] = useState("");
+  const [editSource, setEditSource] = useState("");
 
   const onCreate = async (event: FormEvent) => {
     event.preventDefault();
@@ -28,6 +34,26 @@ export default function CalendarPage() {
     setDescription("");
     setScheduledFor("");
     setSource("");
+  };
+
+  const openEdit = (item: any) => {
+    setEditing(item);
+    setEditTitle(item.title);
+    setEditDescription(item.description ?? "");
+    setEditScheduledFor(new Date(item.scheduledFor).toISOString().slice(0,16));
+    setEditSource(item.source ?? "");
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    await updateItem({
+      id: editing._id as never,
+      title: editTitle.trim(),
+      description: editDescription.trim() || undefined,
+      scheduledFor: new Date(editScheduledFor).getTime(),
+      source: editSource.trim() || undefined,
+    });
+    setEditing(null);
   };
 
   return (
@@ -82,6 +108,7 @@ export default function CalendarPage() {
                   <span>
                     {new Date(item.scheduledFor).toLocaleString()}
                   </span>
+                  <button type="button" onClick={() => openEdit(item)}>Edit</button>
                 </div>
               </article>
             ))}
@@ -89,6 +116,26 @@ export default function CalendarPage() {
           </div>
         </div>
       </section>
+
+      {editing && (
+        <div className={styles.modalBackdrop}>
+          <div className={styles.modal}>
+            <h3>Edit Event</h3>
+            <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+            <input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+            <input
+              type="datetime-local"
+              value={editScheduledFor}
+              onChange={(e) => setEditScheduledFor(e.target.value)}
+            />
+            <input value={editSource} onChange={(e) => setEditSource(e.target.value)} />
+            <div className={styles.modalActions}>
+              <button type="button" onClick={() => setEditing(null)}>Cancel</button>
+              <button type="button" onClick={saveEdit}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

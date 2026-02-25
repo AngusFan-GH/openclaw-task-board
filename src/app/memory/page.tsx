@@ -9,10 +9,15 @@ export default function MemoryPage() {
   const rawItems = useQuery("memories:list" as never);
   const items = useMemo(() => (rawItems ?? []) as any[], [rawItems]);
   const createItem = useMutation("memories:create" as never);
+  const updateItem = useMutation("memories:update" as never);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tags, setTags] = useState("");
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editTags, setEditTags] = useState("");
 
   const onCreate = async (event: FormEvent) => {
     event.preventDefault();
@@ -29,6 +34,28 @@ export default function MemoryPage() {
     setTitle("");
     setContent("");
     setTags("");
+  };
+
+  const openEdit = (item: any) => {
+    setEditing(item);
+    setEditTitle(item.title);
+    setEditContent(item.content);
+    setEditTags(item.tags?.join(", ") ?? "");
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    const tagList = editTags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    await updateItem({
+      id: editing._id as never,
+      title: editTitle.trim(),
+      content: editContent.trim(),
+      tags: tagList.length ? tagList : undefined,
+    });
+    setEditing(null);
   };
 
   return (
@@ -78,6 +105,7 @@ export default function MemoryPage() {
                 <p>{item.content}</p>
                 <div className={styles.actions}>
                   <span>{new Date(item.createdAt).toLocaleString()}</span>
+                  <button type="button" onClick={() => openEdit(item)}>Edit</button>
                 </div>
               </article>
             ))}
@@ -85,6 +113,21 @@ export default function MemoryPage() {
           </div>
         </div>
       </section>
+
+      {editing && (
+        <div className={styles.modalBackdrop}>
+          <div className={styles.modal}>
+            <h3>Edit Memory</h3>
+            <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+            <input value={editTags} onChange={(e) => setEditTags(e.target.value)} />
+            <input value={editContent} onChange={(e) => setEditContent(e.target.value)} />
+            <div className={styles.modalActions}>
+              <button type="button" onClick={() => setEditing(null)}>Cancel</button>
+              <button type="button" onClick={saveEdit}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

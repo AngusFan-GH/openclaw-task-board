@@ -25,3 +25,20 @@ export const create = mutation({
     });
   },
 });
+
+export const update = mutation({
+  args: {
+    id: v.id("memories"),
+    title: v.optional(v.string()),
+    content: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...changes } = args;
+    const patch: Record<string, any> = {};
+    if (changes.title !== undefined) patch.title = changes.title.trim();
+    if (changes.content !== undefined) patch.content = changes.content.trim();
+    if (changes.tags !== undefined) patch.tags = changes.tags.length ? changes.tags : undefined;
+    await ctx.db.patch(id, patch);
+  },
+});

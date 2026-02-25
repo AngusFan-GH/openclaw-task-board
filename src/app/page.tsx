@@ -37,6 +37,11 @@ export default function Home() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [assignee, setAssignee] = useState<Assignee>("me");
+  const [editing, setEditing] = useState<Task | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editAssignee, setEditAssignee] = useState<Assignee>("me");
+  const [editStatus, setEditStatus] = useState<TaskStatus>("todo");
 
   const grouped = useMemo(() => {
     return statusColumns.reduce<Record<TaskStatus, Task[]>>(
@@ -86,6 +91,26 @@ export default function Home() {
   const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
+  };
+
+  const openEdit = (task: Task) => {
+    setEditing(task);
+    setEditTitle(task.title);
+    setEditDescription(task.description ?? "");
+    setEditAssignee(task.assignee);
+    setEditStatus(task.status);
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    await updateTask({
+      id: editing._id as never,
+      title: editTitle.trim(),
+      description: editDescription.trim() || undefined,
+      status: editStatus,
+      assignee: editAssignee,
+    });
+    setEditing(null);
   };
 
   return (
@@ -164,6 +189,9 @@ export default function Home() {
                     >
                       Assign to {task.assignee === "me" ? "You" : "Me"}
                     </button>
+                    <button type="button" onClick={() => openEdit(task)}>
+                      Edit
+                    </button>
                   </div>
                 </article>
               ))}
@@ -174,6 +202,29 @@ export default function Home() {
           </div>
         ))}
       </section>
+
+      {editing && (
+        <div className={styles.modalBackdrop}>
+          <div className={styles.modal}>
+            <h3>Edit Task</h3>
+            <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+            <input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+            <select value={editAssignee} onChange={(e) => setEditAssignee(e.target.value as Assignee)}>
+              <option value="me">Me</option>
+              <option value="you">You</option>
+            </select>
+            <select value={editStatus} onChange={(e) => setEditStatus(e.target.value as TaskStatus)}>
+              {statusColumns.map((s) => (
+                <option key={s.key} value={s.key}>{s.label}</option>
+              ))}
+            </select>
+            <div className={styles.modalActions}>
+              <button type="button" onClick={() => setEditing(null)}>Cancel</button>
+              <button type="button" onClick={saveEdit}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
