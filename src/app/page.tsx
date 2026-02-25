@@ -70,6 +70,23 @@ export default function Home() {
     return "todo";
   };
 
+  const onDragStart = (event: React.DragEvent<HTMLDivElement>, taskId: string) => {
+    event.dataTransfer.setData("text/plain", taskId);
+    event.dataTransfer.effectAllowed = "move";
+  };
+
+  const onDrop = async (event: React.DragEvent<HTMLDivElement>, status: TaskStatus) => {
+    event.preventDefault();
+    const taskId = event.dataTransfer.getData("text/plain");
+    if (!taskId) return;
+    await moveTask({ id: taskId as never, status });
+  };
+
+  const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  };
+
   return (
     <main className={styles.page}>
       <section className={styles.header}>
@@ -104,14 +121,24 @@ export default function Home() {
 
       <section className={styles.board}>
         {statusColumns.map((column) => (
-          <div key={column.key} className={styles.column}>
+          <div
+            key={column.key}
+            className={styles.column}
+            onDrop={(event) => onDrop(event, column.key)}
+            onDragOver={onDragOver}
+          >
             <div className={styles.columnHeader}>
               <h2>{column.label}</h2>
               <span>{grouped[column.key].length}</span>
             </div>
             <div className={styles.taskList}>
               {grouped[column.key].map((task) => (
-                <article key={task._id} className={styles.taskCard}>
+                <article
+                  key={task._id}
+                  className={styles.taskCard}
+                  draggable
+                  onDragStart={(event) => onDragStart(event, task._id)}
+                >
                   <div className={styles.taskTopRow}>
                     <h3>{task.title}</h3>
                     <span className={styles.assignee}>{assigneeLabels[task.assignee]}</span>
