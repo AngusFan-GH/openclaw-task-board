@@ -35,6 +35,8 @@ export default defineSchema({
     lastActionAt: v.optional(v.number()),
     relatedId: v.optional(v.string()),
     errorMessage: v.optional(v.string()),
+    calendarId: v.optional(v.id("calendar")),
+    memoryId: v.optional(v.id("memories")),
     assignee: v.union(v.literal("me"), v.literal("you")),
     createdAt: v.number(),
     updatedAt: v.number(),

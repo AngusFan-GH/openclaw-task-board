@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+const DEFAULT_SCHEDULE_OFFSET = 60 * 60 * 1000;
+
 const statusValidator = v.union(
   v.literal("todo"),
   v.literal("in_progress"),
@@ -18,6 +20,20 @@ const sourceValidator = v.union(
   v.literal("subagent"),
   v.literal("cron"),
 );
+
+async function maybeCreateMemory(ctx: any, task: any, overrides: { content?: string } = {}) {
+  if (task.memoryId || task.status !== "done") return task.memoryId;
+  const content = overrides.content || `Task completed. Last action: ${task.lastAction ?? "n/a"}. Status: ${task.status}.`;
+  const memoryId = await ctx.db.insert("memories", {
+    title: `Task completed: ${task.title}`,
+    content,
+    tags: ["task", "auto"],
+    createdAt: Date.now(),
+  });
+  await ctx.db.patch(task._id, { memoryId });
+  return memoryId;
+}
+
 const taskTypeValidator = v.union(
   v.literal("coding"),
   v.literal("browsing"),
@@ -54,7 +70,14 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    return ctx.db.insert("tasks", {
+    const calendarId = await ctx.db.insert("calendar", {
+      title: args.title.trim(),
+      description: args.description?.trim() || undefined,
+      scheduledFor: now + DEFAULT_SCHEDULE_OFFSET,
+      source: "auto",
+      createdAt: now,
+    });
+    const taskId = await ctx.db.insert("tasks", {
       title: args.title.trim(),
       description: args.description?.trim() || undefined,
       source: args.source ?? "user",
@@ -64,6 +87,7 @@ export const create = mutation({
       lastActionAt: args.lastActionAt ?? now,
       relatedId: args.relatedId?.trim() || undefined,
       errorMessage: args.errorMessage?.trim() || undefined,
+      calendarId,
       assignee: args.assignee ?? "you",
       createdAt: now,
       updatedAt: now,
@@ -140,6 +164,12 @@ export const update = mutation({
     }
 
     await ctx.db.patch(id, patch);
+    if (changes.status === "done") {
+      const task = await ctx.db.get(id);
+      if (task) {
+        await maybeCreateMemory(ctx, task);
+      }
+    }
   },
 });
 
