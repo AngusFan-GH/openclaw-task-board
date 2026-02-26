@@ -7,6 +7,9 @@ A realtime task board built with Next.js App Router and Convex.
 - **Task Board**: status (`todo`, `in_progress`, `done`) + assignee (`me` / `you`)
 - **Calendar**: scheduled tasks & cron jobs timeline
 - **Memory**: searchable memory library (title/content/tags)
+- **Content Pipeline**: track content lifecycle (`idea`, `drafting`, `review`, `published`)
+- **Team**: maintain roster, role, focus, and availability (`active`, `away`)
+- **Office**: shared policies/tools/links/notes reference board
 - Realtime updates via Convex subscriptions
 
 ## Tech Stack
@@ -55,8 +58,14 @@ npm run dev
 
 - `convex/schema.ts`: Convex database schema
 - `convex/tasks.ts`: Convex task query/mutations (`list`, `create`, `update`, `move`)
+- `convex/pipeline.ts`: content pipeline query/mutations (`list`, `create`, `update`)
+- `convex/team.ts`: team query/mutations (`list`, `create`, `update`)
+- `convex/office.ts`: office query/mutations (`list`, `create`, `update`)
 - `src/app/ConvexClientProvider.tsx`: Convex React provider
 - `src/app/page.tsx`: Task board UI
+- `src/app/pipeline/page.tsx`: Content Pipeline UI
+- `src/app/team/page.tsx`: Team UI
+- `src/app/office/page.tsx`: Office UI
 
 ## Notes
 

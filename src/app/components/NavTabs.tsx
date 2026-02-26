@@ -8,6 +8,9 @@ const tabs = [
   { href: "/", label: "Tasks" },
   { href: "/calendar", label: "Calendar" },
   { href: "/memory", label: "Memory" },
+  { href: "/pipeline", label: "Content Pipeline" },
+  { href: "/team", label: "Team" },
+  { href: "/office", label: "Office" },
 ];
 
 export function NavTabs() {
