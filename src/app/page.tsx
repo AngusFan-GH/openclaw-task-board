@@ -100,10 +100,6 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [source, setSource] = useState<TaskSource>("user");
   const [taskType, setTaskType] = useState<TaskType>("coding");
-  const [relatedId, setRelatedId] = useState("");
-  const [lastAction, setLastAction] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [showAdvancedCreate, setShowAdvancedCreate] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -175,17 +171,11 @@ export default function Home() {
       status: "todo",
       source,
       taskType,
-      relatedId: relatedId.trim() || undefined,
-      lastAction: lastAction.trim() || "created",
-      errorMessage: errorMessage.trim() || undefined,
     });
     setTitle("");
     setDescription("");
     setSource("user");
     setTaskType("coding");
-    setRelatedId("");
-    setLastAction("");
-    setErrorMessage("");
   };
 
   const nextStatus = (status: TaskStatus): TaskStatus => {
@@ -312,42 +302,17 @@ export default function Home() {
           placeholder={dict.taskBoard.taskDescription}
           aria-label={dict.taskBoard.taskDescription}
         />
-        <button type="button" onClick={() => setShowAdvancedCreate((prev) => !prev)} className={styles.secondaryButton}>
-          {showAdvancedCreate ? dict.taskBoard.hideAdvanced : dict.taskBoard.advanced}
-        </button>
+        <select value={source} onChange={(e) => setSource(e.target.value as TaskSource)} aria-label={dict.taskBoard.filterSource}>
+          {Object.entries(sourceLabels).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+        <select value={taskType} onChange={(e) => setTaskType(e.target.value as TaskType)} aria-label={dict.taskBoard.filterType}>
+          {Object.entries(typeLabels).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
         <button type="submit">{dict.taskBoard.addTask}</button>
-        {showAdvancedCreate && (
-          <div className={styles.advancedFields}>
-            <select value={source} onChange={(e) => setSource(e.target.value as TaskSource)} aria-label={dict.taskBoard.filterSource}>
-              {Object.entries(sourceLabels).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-            <select value={taskType} onChange={(e) => setTaskType(e.target.value as TaskType)} aria-label={dict.taskBoard.filterType}>
-              {Object.entries(typeLabels).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-            <input
-              value={relatedId}
-              onChange={(e) => setRelatedId(e.target.value)}
-              placeholder={dict.taskBoard.relatedIdOptional}
-              aria-label={dict.taskBoard.relatedId}
-            />
-            <input
-              value={lastAction}
-              onChange={(e) => setLastAction(e.target.value)}
-              placeholder={dict.taskBoard.lastActionInput}
-              aria-label={dict.taskBoard.lastAction}
-            />
-            <input
-              value={errorMessage}
-              onChange={(e) => setErrorMessage(e.target.value)}
-              placeholder={dict.taskBoard.errorMessageInput}
-              aria-label={dict.taskBoard.error}
-            />
-          </div>
-        )}
       </form>
 
       <section className={styles.board}>
