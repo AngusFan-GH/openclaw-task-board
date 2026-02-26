@@ -4,10 +4,27 @@ import { mutation, query } from "./_generated/server";
 const statusValidator = v.union(
   v.literal("todo"),
   v.literal("in_progress"),
+  v.literal("blocked"),
+  v.literal("waiting"),
   v.literal("done"),
+  v.literal("failed"),
+  v.literal("canceled"),
 );
 
 const assigneeValidator = v.union(v.literal("me"), v.literal("you"));
+const sourceValidator = v.union(
+  v.literal("user"),
+  v.literal("agent"),
+  v.literal("subagent"),
+  v.literal("cron"),
+);
+const taskTypeValidator = v.union(
+  v.literal("coding"),
+  v.literal("browsing"),
+  v.literal("message"),
+  v.literal("ops"),
+  v.literal("analysis"),
+);
 
 export const list = query({
   args: {},
@@ -26,16 +43,28 @@ export const create = mutation({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
-    status: statusValidator,
-    assignee: assigneeValidator,
+    status: v.optional(statusValidator),
+    assignee: v.optional(assigneeValidator),
+    source: v.optional(sourceValidator),
+    taskType: v.optional(taskTypeValidator),
+    lastAction: v.optional(v.string()),
+    lastActionAt: v.optional(v.number()),
+    relatedId: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
     return ctx.db.insert("tasks", {
       title: args.title.trim(),
       description: args.description?.trim() || undefined,
-      status: args.status,
-      assignee: args.assignee,
+      source: args.source ?? "user",
+      taskType: args.taskType ?? "coding",
+      status: args.status ?? "todo",
+      lastAction: args.lastAction?.trim() || "created",
+      lastActionAt: args.lastActionAt ?? now,
+      relatedId: args.relatedId?.trim() || undefined,
+      errorMessage: args.errorMessage?.trim() || undefined,
+      assignee: args.assignee ?? "me",
       createdAt: now,
       updatedAt: now,
     });
@@ -49,14 +78,33 @@ export const update = mutation({
     description: v.optional(v.string()),
     status: v.optional(statusValidator),
     assignee: v.optional(assigneeValidator),
+    source: v.optional(sourceValidator),
+    taskType: v.optional(taskTypeValidator),
+    lastAction: v.optional(v.string()),
+    lastActionAt: v.optional(v.number()),
+    relatedId: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...changes } = args;
     const patch: {
       title?: string;
       description?: string | undefined;
-      status?: "todo" | "in_progress" | "done";
+      status?:
+        | "todo"
+        | "in_progress"
+        | "blocked"
+        | "waiting"
+        | "done"
+        | "failed"
+        | "canceled";
       assignee?: "me" | "you";
+      source?: "user" | "agent" | "subagent" | "cron";
+      taskType?: "coding" | "browsing" | "message" | "ops" | "analysis";
+      lastAction?: string | undefined;
+      lastActionAt?: number | undefined;
+      relatedId?: string | undefined;
+      errorMessage?: string | undefined;
       updatedAt: number;
     } = { updatedAt: Date.now() };
 
@@ -72,6 +120,24 @@ export const update = mutation({
     if (changes.assignee !== undefined) {
       patch.assignee = changes.assignee;
     }
+    if (changes.source !== undefined) {
+      patch.source = changes.source;
+    }
+    if (changes.taskType !== undefined) {
+      patch.taskType = changes.taskType;
+    }
+    if (changes.lastAction !== undefined) {
+      patch.lastAction = changes.lastAction.trim() || undefined;
+    }
+    if (changes.lastActionAt !== undefined) {
+      patch.lastActionAt = changes.lastActionAt;
+    }
+    if (changes.relatedId !== undefined) {
+      patch.relatedId = changes.relatedId.trim() || undefined;
+    }
+    if (changes.errorMessage !== undefined) {
+      patch.errorMessage = changes.errorMessage.trim() || undefined;
+    }
 
     await ctx.db.patch(id, patch);
   },
@@ -81,11 +147,19 @@ export const move = mutation({
   args: {
     id: v.id("tasks"),
     status: statusValidator,
+    lastAction: v.optional(v.string()),
+    relatedId: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const now = Date.now();
     await ctx.db.patch(args.id, {
       status: args.status,
-      updatedAt: Date.now(),
+      lastAction: args.lastAction?.trim() || `status:${args.status}`,
+      lastActionAt: now,
+      relatedId: args.relatedId?.trim() || undefined,
+      errorMessage: args.errorMessage?.trim() || undefined,
+      updatedAt: now,
     });
   },
 });
