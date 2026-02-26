@@ -74,16 +74,69 @@ npm run dev
 - Run `npx convex dev` whenever developing Convex functions to keep generated files up-to-date.
 - If `NEXT_PUBLIC_CONVEX_URL` is missing, the app throws an explicit startup error.
 
+## i18n (zh/en)
+
+- The UI uses a lightweight client dictionary (no route-level locale segments).
+- Default language is `zh`.
+- Use the header toggle (`中文` / `EN`) on the Task Board to switch language.
+- The selected language is saved in `localStorage` (`openclaw-locale`) and applies to:
+  - Task Board labels
+  - Shared navigation tabs
+- Dictionary and provider files:
+  - `src/app/i18n/dictionaries.ts`
+  - `src/app/i18n/I18nProvider.tsx`
+
 ## Task sync (CLI)
 
-To add tasks programmatically (e.g., from automation):
+Use Convex task APIs from scripts:
 
 ```bash
-CONVEX_URL=<your_convex_url> npm run task:add "Title" "optional description" me
+CONVEX_URL=<your_convex_url> npm run task:log -- --title "Implement CLI" --source agent --type coding --status in_progress --assignee me --relatedId local-123 --lastAction "started"
 ```
 
-- `me` or `you` controls the assignee.
-- Tasks are created in `todo` status.
+```bash
+CONVEX_URL=<your_convex_url> npm run task:update -- --id <task_id> --status done --lastAction "completed"
+```
+
+Or update by exact title:
+
+```bash
+CONVEX_URL=<your_convex_url> npm run task:update -- --title "Implement CLI" --status failed --lastAction "blocked by CI" --error-message "lint failed"
+```
+
+- Both commands support all task fields in the schema.
+- `task:log` supports: `--title --source --type --status --assignee --relatedId --lastAction` (plus optional description/time/error fields).
+- `task:update` supports `--id` or `--title`, plus update fields such as `--status --lastAction --error-message`.
+- Flags map to `TASK_*` env vars as fallback (`TASK_TITLE`, `TASK_STATUS`, `TASK_SOURCE`, `TASK_TYPE`, `TASK_ASSIGNEE`, `TASK_LAST_ACTION`, `TASK_LAST_ACTION_AT`, `TASK_RELATED_ID`, `TASK_ERROR_MESSAGE`, and `TASK_ID` for updates).
+
+## Auto logging helper (local dev)
+
+Lightweight wrapper that logs `in_progress` before running a command, then `done`/`failed` by exit code:
+
+```bash
+CONVEX_URL=<your_convex_url> npm run task:auto -- --title "Local dev build" --source agent --task-type ops -- npm run build
+```
+
+Daemon-like runner with heartbeat updates (keeps `lastActionAt` fresh while command runs):
+
+```bash
+CONVEX_URL=<your_convex_url> npm run task:daemon -- --title "Long build" --source agent --type ops --relatedId proc-42 --interval-ms 10000 -- npm run build
+```
+
+Because task state is persisted through Convex mutations, the board updates in real time as logs/updates/heartbeats arrive.
+
+Example as a Node helper:
+
+```js
+import { runWithTaskAutoLog } from "./scripts/task_auto_log.mjs";
+
+await runWithTaskAutoLog({
+  title: "Lint project",
+  command: "npm",
+  args: ["run", "lint"],
+  createFields: { source: "agent", taskType: "ops", assignee: "me" },
+});
+```
 
 ## Task Logging Schema
 

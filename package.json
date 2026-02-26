@@ -9,7 +9,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "task:add": "node scripts/add_task.mjs"
+    "task:add": "node scripts/add_task.mjs",
+    "task:log": "node scripts/task_log.mjs",
+    "task:update": "node scripts/task_update.mjs",
+    "task:auto": "node scripts/task_auto_log.mjs",
+    "task:daemon": "node scripts/task_daemon.mjs"
   },
   "dependencies": {
     "convex": "^1.25.4",

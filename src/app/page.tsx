@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import styles from "./page.module.css";
 import { NavTabs } from "./components/NavTabs";
 import { createTaskLogApi } from "./lib/taskLog";
+import { useI18n } from "./i18n/I18nProvider";
 
 type TaskStatus =
   | "todo"
@@ -33,37 +34,30 @@ type Task = {
   updatedAt: number;
 };
 
-const statusColumns: { key: TaskStatus; label: string }[] = [
-  { key: "todo", label: "To Do" },
-  { key: "in_progress", label: "In Progress" },
-  { key: "blocked", label: "Blocked" },
-  { key: "waiting", label: "Waiting" },
-  { key: "done", label: "Done" },
-  { key: "failed", label: "Failed" },
-  { key: "canceled", label: "Canceled" },
-];
-
-const assigneeLabels: Record<Assignee, string> = {
-  me: "Me",
-  you: "You",
-};
-const sourceLabels: Record<TaskSource, string> = {
-  user: "User",
-  agent: "Agent",
-  subagent: "Subagent",
-  cron: "Cron",
-};
-const typeLabels: Record<TaskType, string> = {
-  coding: "Coding",
-  browsing: "Browsing",
-  message: "Message",
-  ops: "Ops",
-  analysis: "Analysis",
-};
+const statusKeys: TaskStatus[] = ["todo", "in_progress", "blocked", "waiting", "done", "failed", "canceled"];
 
 export default function Home() {
+  const { locale, setLocale, dict } = useI18n();
+  const statusColumns = useMemo(
+    () => statusKeys.map((key) => ({ key, label: dict.statuses[key] })),
+    [dict],
+  );
+  const assigneeLabels: Record<Assignee, string> = {
+    me: dict.common.me,
+    you: dict.common.you,
+  };
+  const sourceLabels: Record<TaskSource, string> = dict.sources;
+  const typeLabels: Record<TaskType, string> = dict.taskTypes;
+
   const rawTasks = useQuery("tasks:list" as never);
-  const tasks = useMemo(() => (rawTasks ?? []) as Task[], [rawTasks]);
+  const tasks = useMemo(() => {
+    const list = (rawTasks ?? []) as Task[];
+    return list.map((task) => ({
+      ...task,
+      source: task.source ?? "agent",
+      taskType: task.taskType ?? "ops",
+    }));
+  }, [rawTasks]);
   const createTask = useMutation("tasks:create" as never);
   const moveTask = useMutation("tasks:move" as never);
   const updateTask = useMutation("tasks:update" as never);
@@ -140,9 +134,9 @@ export default function Home() {
   }, [tasks, query, assigneeFilter, statusFilter, sourceFilter, taskTypeFilter]);
 
   const grouped = useMemo(() => {
-    return statusColumns.reduce<Record<TaskStatus, Task[]>>(
-      (acc, column) => {
-        acc[column.key] = filteredTasks.filter((task) => task.status === column.key);
+    return statusKeys.reduce<Record<TaskStatus, Task[]>>(
+      (acc, key) => {
+        acc[key] = filteredTasks.filter((task) => task.status === key);
         return acc;
       },
       {
@@ -261,13 +255,23 @@ export default function Home() {
   };
 
   const formatTime = (value?: number) =>
-    value ? new Date(value).toLocaleString() : "n/a";
+    value ? new Date(value).toLocaleString(locale) : dict.common.notAvailable;
 
   return (
     <main className={styles.page}>
       <section className={styles.header}>
-        <h1>Mission Control</h1>
-        <p>Tasks, calendar, and memory in one place.</p>
+        <div className={styles.headerTop}>
+          <h1>{dict.taskBoard.title}</h1>
+          <div className={styles.localeToggle}>
+            <button type="button" onClick={() => setLocale("zh")} className={locale === "zh" ? styles.localeActive : ""}>
+              中文
+            </button>
+            <button type="button" onClick={() => setLocale("en")} className={locale === "en" ? styles.localeActive : ""}>
+              EN
+            </button>
+          </div>
+        </div>
+        <p>{dict.taskBoard.subtitle}</p>
       </section>
       <NavTabs />
 
@@ -275,32 +279,32 @@ export default function Home() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search tasks"
-          aria-label="Search tasks"
+          placeholder={dict.taskBoard.searchTasks}
+          aria-label={dict.taskBoard.searchTasks}
         />
         <select
           value={assigneeFilter}
           onChange={(e) => setAssigneeFilter(e.target.value as "all" | Assignee)}
-          aria-label="Filter assignee"
+          aria-label={dict.taskBoard.filterAssignee}
         >
-          <option value="all">All</option>
-          <option value="me">Assigned to Me</option>
-          <option value="you">Assigned to You</option>
+          <option value="all">{dict.common.all}</option>
+          <option value="me">{dict.taskBoard.assignedToMe}</option>
+          <option value="you">{dict.taskBoard.assignedToYou}</option>
         </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | TaskStatus)} aria-label="Filter status">
-          <option value="all">All Statuses</option>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | TaskStatus)} aria-label={dict.taskBoard.filterStatus}>
+          <option value="all">{dict.taskBoard.allStatuses}</option>
           {statusColumns.map((s) => (
             <option key={s.key} value={s.key}>{s.label}</option>
           ))}
         </select>
-        <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as "all" | TaskSource)} aria-label="Filter source">
-          <option value="all">All Sources</option>
+        <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as "all" | TaskSource)} aria-label={dict.taskBoard.filterSource}>
+          <option value="all">{dict.taskBoard.allSources}</option>
           {Object.entries(sourceLabels).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
         </select>
-        <select value={taskTypeFilter} onChange={(e) => setTaskTypeFilter(e.target.value as "all" | TaskType)} aria-label="Filter type">
-          <option value="all">All Types</option>
+        <select value={taskTypeFilter} onChange={(e) => setTaskTypeFilter(e.target.value as "all" | TaskType)} aria-label={dict.taskBoard.filterType}>
+          <option value="all">{dict.taskBoard.allTypes}</option>
           {Object.entries(typeLabels).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
@@ -308,30 +312,30 @@ export default function Home() {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Task title"
-          aria-label="Task title"
+          placeholder={dict.taskBoard.taskTitle}
+          aria-label={dict.taskBoard.taskTitle}
           required
         />
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description (optional)"
-          aria-label="Task description"
+          placeholder={dict.taskBoard.taskDescription}
+          aria-label={dict.taskBoard.taskDescription}
         />
         <select
           value={assignee}
           onChange={(e) => setAssignee(e.target.value as Assignee)}
-          aria-label="Assignee"
+          aria-label={dict.taskBoard.filterAssignee}
         >
-          <option value="me">Assign to Me</option>
-          <option value="you">Assign to You</option>
+          <option value="me">{dict.taskBoard.assignToMe}</option>
+          <option value="you">{dict.taskBoard.assignToYou}</option>
         </select>
-        <select value={source} onChange={(e) => setSource(e.target.value as TaskSource)} aria-label="Task source">
+        <select value={source} onChange={(e) => setSource(e.target.value as TaskSource)} aria-label={dict.taskBoard.filterSource}>
           {Object.entries(sourceLabels).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
         </select>
-        <select value={taskType} onChange={(e) => setTaskType(e.target.value as TaskType)} aria-label="Task type">
+        <select value={taskType} onChange={(e) => setTaskType(e.target.value as TaskType)} aria-label={dict.taskBoard.filterType}>
           {Object.entries(typeLabels).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
@@ -339,19 +343,19 @@ export default function Home() {
         <input
           value={relatedId}
           onChange={(e) => setRelatedId(e.target.value)}
-          placeholder="Related ID (optional)"
-          aria-label="Related ID"
+          placeholder={dict.taskBoard.relatedIdOptional}
+          aria-label={dict.taskBoard.relatedId}
         />
-        <button type="submit">Add Task</button>
+        <button type="submit">{dict.taskBoard.addTask}</button>
       </form>
 
       <section className={styles.systemStatus}>
-        <h2>System Status</h2>
-        <p>Latest task update: {formatTime(latestTaskUpdateAt)}</p>
-        <p>Latest action update: {formatTime(latestActionAt)}</p>
-        <p>Running processes: {runningProcesses.length}</p>
+        <h2>{dict.taskBoard.systemStatus}</h2>
+        <p>{dict.taskBoard.latestTaskUpdate}: {formatTime(latestTaskUpdateAt)}</p>
+        <p>{dict.taskBoard.latestActionUpdate}: {formatTime(latestActionAt)}</p>
+        <p>{dict.taskBoard.runningProcesses}: {runningProcesses.length}</p>
         <div className={styles.processList}>
-          {runningProcesses.length === 0 && <span className={styles.emptyInline}>No running process IDs found.</span>}
+          {runningProcesses.length === 0 && <span className={styles.emptyInline}>{dict.taskBoard.noRunningProcessIds}</span>}
           {runningProcesses.map((task) => (
             <span key={task._id} className={styles.processItem}>
               {task.relatedId} ({task.title})
@@ -388,14 +392,14 @@ export default function Home() {
                   </div>
                   {task.description && <p>{task.description}</p>}
                   <div className={styles.meta}>
-                    <span>Source: {sourceLabels[task.source]}</span>
-                    <span>Type: {typeLabels[task.taskType]}</span>
-                    <span>Status: {task.status}</span>
-                    <span>Last action: {task.lastAction ?? "n/a"}</span>
-                    <span>Action at: {formatTime(task.lastActionAt)}</span>
-                    <span>Related ID: {task.relatedId ?? "n/a"}</span>
+                    <span>{dict.taskBoard.source}: {sourceLabels[task.source]}</span>
+                    <span>{dict.taskBoard.type}: {typeLabels[task.taskType]}</span>
+                    <span>{dict.taskBoard.status}: {dict.statuses[task.status]}</span>
+                    <span>{dict.taskBoard.lastAction}: {task.lastAction ?? dict.common.notAvailable}</span>
+                    <span>{dict.taskBoard.actionAt}: {formatTime(task.lastActionAt)}</span>
+                    <span>{dict.taskBoard.relatedId}: {task.relatedId ?? dict.common.notAvailable}</span>
                     <span className={task.errorMessage ? styles.errorText : ""}>
-                      Error: {task.errorMessage ?? "none"}
+                      {dict.taskBoard.error}: {task.errorMessage ?? dict.common.none}
                     </span>
                   </div>
                   <div className={styles.actions}>
@@ -411,7 +415,7 @@ export default function Home() {
                         })
                       }
                     >
-                      Move to {statusColumns.find((s) => s.key === nextStatus(task.status))?.label}
+                      {dict.taskBoard.moveTo} {statusColumns.find((s) => s.key === nextStatus(task.status))?.label}
                     </button>
                     <button
                       type="button"
@@ -424,16 +428,16 @@ export default function Home() {
                         })
                       }
                     >
-                      Assign to {task.assignee === "me" ? "You" : "Me"}
+                      {dict.taskBoard.assignTo} {task.assignee === "me" ? dict.common.you : dict.common.me}
                     </button>
                     <button type="button" onClick={() => openEdit(task)}>
-                      Edit
+                      {dict.common.edit}
                     </button>
                   </div>
                 </article>
               ))}
               {grouped[column.key].length === 0 && (
-                <div className={styles.empty}>No tasks in this column.</div>
+                <div className={styles.empty}>{dict.taskBoard.noTasksInColumn}</div>
               )}
             </div>
           </div>
@@ -443,12 +447,12 @@ export default function Home() {
       {editing && (
         <div className={styles.modalBackdrop}>
           <div className={styles.modal}>
-            <h3>Edit Task</h3>
+            <h3>{dict.taskBoard.editTask}</h3>
             <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
             <input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
             <select value={editAssignee} onChange={(e) => setEditAssignee(e.target.value as Assignee)}>
-              <option value="me">Me</option>
-              <option value="you">You</option>
+              <option value="me">{dict.common.me}</option>
+              <option value="you">{dict.common.you}</option>
             </select>
             <select value={editStatus} onChange={(e) => setEditStatus(e.target.value as TaskStatus)}>
               {statusColumns.map((s) => (
@@ -468,21 +472,21 @@ export default function Home() {
             <input
               value={editLastAction}
               onChange={(e) => setEditLastAction(e.target.value)}
-              placeholder="Last action"
+              placeholder={dict.taskBoard.lastActionInput}
             />
             <input
               value={editRelatedId}
               onChange={(e) => setEditRelatedId(e.target.value)}
-              placeholder="Related ID"
+              placeholder={dict.taskBoard.relatedIdInput}
             />
             <input
               value={editErrorMessage}
               onChange={(e) => setEditErrorMessage(e.target.value)}
-              placeholder="Error message"
+              placeholder={dict.taskBoard.errorMessageInput}
             />
             <div className={styles.modalActions}>
-              <button type="button" onClick={() => setEditing(null)}>Cancel</button>
-              <button type="button" onClick={saveEdit}>Save</button>
+              <button type="button" onClick={() => setEditing(null)}>{dict.common.cancel}</button>
+              <button type="button" onClick={saveEdit}>{dict.common.save}</button>
             </div>
           </div>
         </div>

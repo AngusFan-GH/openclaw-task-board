@@ -5,18 +5,22 @@ export default defineSchema({
   tasks: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
-    source: v.union(
-      v.literal("user"),
-      v.literal("agent"),
-      v.literal("subagent"),
-      v.literal("cron"),
+    source: v.optional(
+      v.union(
+        v.literal("user"),
+        v.literal("agent"),
+        v.literal("subagent"),
+        v.literal("cron"),
+      ),
     ),
-    taskType: v.union(
-      v.literal("coding"),
-      v.literal("browsing"),
-      v.literal("message"),
-      v.literal("ops"),
-      v.literal("analysis"),
+    taskType: v.optional(
+      v.union(
+        v.literal("coding"),
+        v.literal("browsing"),
+        v.literal("message"),
+        v.literal("ops"),
+        v.literal("analysis"),
+      ),
     ),
     status: v.union(
       v.literal("todo"),
