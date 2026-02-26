@@ -1,11 +1,13 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import styles from "../page.module.css";
 import { NavTabs } from "../components/NavTabs";
+import { useI18n } from "../i18n/I18nProvider";
 
 export default function CalendarPage() {
+  const { locale, dict } = useI18n();
   const rawItems = useQuery("calendar:list" as never);
   const [query, setQuery] = useState("");
   const items = useMemo(() => (rawItems ?? []) as any[], [rawItems]);
@@ -18,98 +20,34 @@ export default function CalendarPage() {
       (item.source ?? "").toLowerCase().includes(q)
     );
   }, [items, query]);
-  const createItem = useMutation("calendar:create" as never);
-  const updateItem = useMutation("calendar:update" as never);
+  const removeItem = useMutation("calendar:remove" as never);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [scheduledFor, setScheduledFor] = useState("");
-  const [source, setSource] = useState("");
-  const [editing, setEditing] = useState<any | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [editScheduledFor, setEditScheduledFor] = useState("");
-  const [editSource, setEditSource] = useState("");
-
-  const onCreate = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!title.trim() || !scheduledFor) return;
-    await createItem({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      scheduledFor: new Date(scheduledFor).getTime(),
-      source: source.trim() || undefined,
-    });
-    setTitle("");
-    setDescription("");
-    setScheduledFor("");
-    setSource("");
-  };
-
-  const openEdit = (item: any) => {
-    setEditing(item);
-    setEditTitle(item.title);
-    setEditDescription(item.description ?? "");
-    setEditScheduledFor(new Date(item.scheduledFor).toISOString().slice(0,16));
-    setEditSource(item.source ?? "");
-  };
-
-  const saveEdit = async () => {
-    if (!editing) return;
-    if (!editTitle.trim() || !editScheduledFor) return;
-    await updateItem({
-      id: editing._id as never,
-      title: editTitle.trim(),
-      description: editDescription.trim() || undefined,
-      scheduledFor: new Date(editScheduledFor).getTime(),
-      source: editSource.trim() || undefined,
-    });
-    setEditing(null);
+  const deleteItem = async (itemId: string) => {
+    if (!confirm(dict.calendarPage.confirmDelete)) return;
+    await removeItem({ id: itemId as never });
   };
 
   return (
     <main className={styles.page}>
       <section className={styles.header}>
-        <h1>Calendar</h1>
-        <p>All scheduled tasks and cron jobs in one timeline.</p>
+        <h1>{dict.calendarPage.title}</h1>
+        <p>{dict.calendarPage.subtitle}</p>
       </section>
       <NavTabs />
 
-      <form onSubmit={onCreate} className={styles.createForm}>
+      <section className={styles.filterBar}>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search events"
+          placeholder={dict.calendarPage.searchEvents}
+          aria-label={dict.calendarPage.searchEvents}
         />
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Event title"
-          required
-        />
-        <input
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description"
-        />
-        <input
-          type="datetime-local"
-          value={scheduledFor}
-          onChange={(e) => setScheduledFor(e.target.value)}
-          required
-        />
-        <input
-          value={source}
-          onChange={(e) => setSource(e.target.value)}
-          placeholder="Source (cron/manual)"
-        />
-        <button type="submit">Add Event</button>
-      </form>
+      </section>
 
       <section className={styles.board}>
         <div className={styles.column}>
           <div className={styles.columnHeader}>
-            <h2>Upcoming</h2>
+            <h2>{dict.calendarPage.upcoming}</h2>
             <span>{items.length}</span>
           </div>
           <div className={styles.taskList}>
@@ -121,37 +59,22 @@ export default function CalendarPage() {
                 </div>
                 {item.description && <p>{item.description}</p>}
                 <div className={styles.actions}>
-                  <span>
-                    {new Date(item.scheduledFor).toLocaleString()}
-                  </span>
-                  <button type="button" onClick={() => openEdit(item)}>Edit</button>
+                  <span>{dict.calendarPage.scheduledForLabel}: {new Date(item.scheduledFor).toLocaleString(locale)}</span>
+                  <span>{dict.calendarPage.sourceLabel}: {item.source || dict.common.notAvailable}</span>
+                  <button
+                    type="button"
+                    className={`${styles.secondaryButton} ${styles.rightActionButton}`}
+                    onClick={() => deleteItem(item._id)}
+                  >
+                    {dict.common.delete}
+                  </button>
                 </div>
               </article>
             ))}
-            {filteredItems.length === 0 && <div className={styles.empty}>No scheduled tasks.</div>}
+            {filteredItems.length === 0 && <div className={styles.empty}>{dict.calendarPage.noScheduledTasks}</div>}
           </div>
         </div>
       </section>
-
-      {editing && (
-        <div className={styles.modalBackdrop}>
-          <div className={styles.modal}>
-            <h3>Edit Event</h3>
-            <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
-            <input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
-            <input
-              type="datetime-local"
-              value={editScheduledFor}
-              onChange={(e) => setEditScheduledFor(e.target.value)}
-            />
-            <input value={editSource} onChange={(e) => setEditSource(e.target.value)} />
-            <div className={styles.modalActions}>
-              <button type="button" onClick={() => setEditing(null)}>Cancel</button>
-              <button type="button" onClick={saveEdit}>Save</button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

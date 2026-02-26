@@ -92,6 +92,7 @@ export const create = mutation({
       createdAt: now,
       updatedAt: now,
     });
+    return taskId;
   },
 });
 
@@ -191,6 +192,12 @@ export const move = mutation({
       errorMessage: args.errorMessage?.trim() || undefined,
       updatedAt: now,
     });
+    if (args.status === "done") {
+      const task = await ctx.db.get(args.id);
+      if (task) {
+        await maybeCreateMemory(ctx, task);
+      }
+    }
   },
 });
 

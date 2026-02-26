@@ -1,11 +1,13 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import styles from "../page.module.css";
 import { NavTabs } from "../components/NavTabs";
+import { useI18n } from "../i18n/I18nProvider";
 
 export default function MemoryPage() {
+  const { locale, dict } = useI18n();
   const rawItems = useQuery("memories:list" as never);
   const [query, setQuery] = useState("");
   const items = useMemo(() => (rawItems ?? []) as any[], [rawItems]);
@@ -18,94 +20,34 @@ export default function MemoryPage() {
       (item.tags ?? []).join(",").toLowerCase().includes(q)
     );
   }, [items, query]);
-  const createItem = useMutation("memories:create" as never);
-  const updateItem = useMutation("memories:update" as never);
+  const removeItem = useMutation("memories:remove" as never);
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [tags, setTags] = useState("");
-  const [editing, setEditing] = useState<any | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editContent, setEditContent] = useState("");
-  const [editTags, setEditTags] = useState("");
-
-  const onCreate = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!title.trim() || !content.trim()) return;
-    const tagList = tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-    await createItem({
-      title: title.trim(),
-      content: content.trim(),
-      tags: tagList.length ? tagList : undefined,
-    });
-    setTitle("");
-    setContent("");
-    setTags("");
-  };
-
-  const openEdit = (item: any) => {
-    setEditing(item);
-    setEditTitle(item.title);
-    setEditContent(item.content);
-    setEditTags(item.tags?.join(", ") ?? "");
-  };
-
-  const saveEdit = async () => {
-    if (!editing) return;
-    const tagList = editTags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-    await updateItem({
-      id: editing._id as never,
-      title: editTitle.trim(),
-      content: editContent.trim(),
-      tags: tagList.length ? tagList : undefined,
-    });
-    setEditing(null);
+  const deleteItem = async (itemId: string) => {
+    if (!confirm(dict.memoryPage.confirmDelete)) return;
+    await removeItem({ id: itemId as never });
   };
 
   return (
     <main className={styles.page}>
       <section className={styles.header}>
-        <h1>Memory</h1>
-        <p>Searchable memory library for decisions and context.</p>
+        <h1>{dict.memoryPage.title}</h1>
+        <p>{dict.memoryPage.subtitle}</p>
       </section>
       <NavTabs />
 
-      <form onSubmit={onCreate} className={styles.createForm}>
+      <section className={styles.filterBar}>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search memories"
+          placeholder={dict.memoryPage.searchMemories}
+          aria-label={dict.memoryPage.searchMemories}
         />
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title"
-          required
-        />
-        <input
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          placeholder="Tags (comma separated)"
-        />
-        <input
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Memory content"
-          required
-        />
-        <button type="submit">Add Memory</button>
-      </form>
+      </section>
 
       <section className={styles.board}>
         <div className={styles.column}>
           <div className={styles.columnHeader}>
-            <h2>Memories</h2>
+            <h2>{dict.memoryPage.memories}</h2>
             <span>{items.length}</span>
           </div>
           <div className={styles.taskList}>
@@ -119,30 +61,21 @@ export default function MemoryPage() {
                 </div>
                 <p>{item.content}</p>
                 <div className={styles.actions}>
-                  <span>{new Date(item.createdAt).toLocaleString()}</span>
-                  <button type="button" onClick={() => openEdit(item)}>Edit</button>
+                  <span>{dict.memoryPage.createdAtLabel}: {new Date(item.createdAt).toLocaleString(locale)}</span>
+                  <button
+                    type="button"
+                    className={`${styles.secondaryButton} ${styles.rightActionButton}`}
+                    onClick={() => deleteItem(item._id)}
+                  >
+                    {dict.common.delete}
+                  </button>
                 </div>
               </article>
             ))}
-            {filteredItems.length === 0 && <div className={styles.empty}>No memories yet.</div>}
+            {filteredItems.length === 0 && <div className={styles.empty}>{dict.memoryPage.noMemories}</div>}
           </div>
         </div>
       </section>
-
-      {editing && (
-        <div className={styles.modalBackdrop}>
-          <div className={styles.modal}>
-            <h3>Edit Memory</h3>
-            <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
-            <input value={editTags} onChange={(e) => setEditTags(e.target.value)} />
-            <input value={editContent} onChange={(e) => setEditContent(e.target.value)} />
-            <div className={styles.modalActions}>
-              <button type="button" onClick={() => setEditing(null)}>Cancel</button>
-              <button type="button" onClick={saveEdit}>Save</button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

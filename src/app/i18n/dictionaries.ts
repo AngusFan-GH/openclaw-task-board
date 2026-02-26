@@ -62,6 +62,25 @@ export type Dictionary = {
     relatedIdInput: string;
     errorMessageInput: string;
   };
+  calendarPage: {
+    confirmDelete: string;
+    title: string;
+    subtitle: string;
+    searchEvents: string;
+    upcoming: string;
+    noScheduledTasks: string;
+    scheduledForLabel: string;
+    sourceLabel: string;
+  };
+  memoryPage: {
+    confirmDelete: string;
+    title: string;
+    subtitle: string;
+    searchMemories: string;
+    memories: string;
+    noMemories: string;
+    createdAtLabel: string;
+  };
   statuses: Record<"todo" | "in_progress" | "blocked" | "waiting" | "done" | "failed" | "canceled", string>;
   sources: Record<"user" | "agent" | "subagent" | "cron", string>;
   taskTypes: Record<"coding" | "browsing" | "message" | "ops" | "analysis", string>;
@@ -129,6 +148,25 @@ export const dictionaries: Record<Locale, Dictionary> = {
       lastActionInput: "最后动作",
       relatedIdInput: "关联 ID",
       errorMessageInput: "错误信息",
+    },
+    calendarPage: {
+      confirmDelete: "确认删除该日程？",
+      title: "日历",
+      subtitle: "所有已排程任务与定时任务时间线。",
+      searchEvents: "搜索日程",
+      upcoming: "即将到来",
+      noScheduledTasks: "暂无已排程任务。",
+      scheduledForLabel: "计划时间",
+      sourceLabel: "来源",
+    },
+    memoryPage: {
+      confirmDelete: "确认删除该记忆？",
+      title: "记忆",
+      subtitle: "可搜索的决策与上下文记忆库。",
+      searchMemories: "搜索记忆",
+      memories: "记忆",
+      noMemories: "暂无记忆。",
+      createdAtLabel: "创建时间",
     },
     statuses: {
       todo: "待办",
@@ -214,6 +252,25 @@ export const dictionaries: Record<Locale, Dictionary> = {
       lastActionInput: "Last action",
       relatedIdInput: "Related ID",
       errorMessageInput: "Error message",
+    },
+    calendarPage: {
+      confirmDelete: "Delete this event?",
+      title: "Calendar",
+      subtitle: "All scheduled tasks and cron jobs in one timeline.",
+      searchEvents: "Search events",
+      upcoming: "Upcoming",
+      noScheduledTasks: "No scheduled tasks.",
+      scheduledForLabel: "Scheduled for",
+      sourceLabel: "Source",
+    },
+    memoryPage: {
+      confirmDelete: "Delete this memory?",
+      title: "Memory",
+      subtitle: "Searchable memory library for decisions and context.",
+      searchMemories: "Search memories",
+      memories: "Memories",
+      noMemories: "No memories yet.",
+      createdAtLabel: "Created at",
     },
     statuses: {
       todo: "To Do",

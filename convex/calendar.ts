@@ -46,3 +46,12 @@ export const update = mutation({
     await ctx.db.patch(id, patch);
   },
 });
+
+export const remove = mutation({
+  args: {
+    id: v.id("calendar"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
+});
