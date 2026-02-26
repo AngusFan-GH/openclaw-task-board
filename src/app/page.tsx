@@ -4,7 +4,6 @@ import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import styles from "./page.module.css";
 import { NavTabs } from "./components/NavTabs";
-import { createTaskLogApi } from "./lib/taskLog";
 import { useI18n } from "./i18n/I18nProvider";
 
 type TaskStatus =
@@ -53,43 +52,7 @@ export default function Home() {
     }));
   }, [rawTasks]);
   const createTask = useMutation("tasks:create" as never);
-  const moveTask = useMutation("tasks:move" as never);
-  const updateTask = useMutation("tasks:update" as never);
   const removeTask = useMutation("tasks:remove" as never);
-  const taskLog = useMemo(() => {
-    const createTaskMutation = (args: {
-      title: string;
-      description?: string;
-      status?: TaskStatus;
-      source?: TaskSource;
-      taskType?: TaskType;
-      lastAction?: string;
-      lastActionAt?: number;
-      relatedId?: string;
-      errorMessage?: string;
-    }) => createTask(args as never);
-    const updateTaskMutation = (args: {
-      id: string;
-      title?: string;
-      description?: string;
-      status?: TaskStatus;
-      source?: TaskSource;
-      taskType?: TaskType;
-      lastAction?: string;
-      lastActionAt?: number;
-      relatedId?: string;
-      errorMessage?: string;
-    }) => updateTask(args as never);
-    const moveTaskMutation = (args: {
-      id: string;
-      status: TaskStatus;
-      lastAction?: string;
-      relatedId?: string;
-      errorMessage?: string;
-    }) => moveTask(args as never);
-
-    return createTaskLogApi(createTaskMutation, updateTaskMutation, moveTaskMutation);
-  }, [createTask, moveTask, updateTask]);
 
   const deleteTask = async (taskId: string) => {
     if (!confirm(dict.taskBoard.confirmDelete)) return;
@@ -100,15 +63,6 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [source, setSource] = useState<TaskSource>("user");
   const [taskType, setTaskType] = useState<TaskType>("coding");
-  const [editing, setEditing] = useState<Task | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [editStatus, setEditStatus] = useState<TaskStatus>("todo");
-  const [editSource, setEditSource] = useState<TaskSource>("user");
-  const [editTaskType, setEditTaskType] = useState<TaskType>("coding");
-  const [editLastAction, setEditLastAction] = useState("");
-  const [editRelatedId, setEditRelatedId] = useState("");
-  const [editErrorMessage, setEditErrorMessage] = useState("");
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | TaskStatus>("all");
@@ -165,7 +119,7 @@ export default function Home() {
     if (!cleanedTitle) {
       return;
     }
-    await taskLog.logTask({
+    await createTask({
       title: cleanedTitle,
       description: description.trim() || undefined,
       status: "todo",
@@ -178,67 +132,7 @@ export default function Home() {
     setTaskType("coding");
   };
 
-  const nextStatus = (status: TaskStatus): TaskStatus => {
-    if (status === "todo") return "in_progress";
-    if (status === "in_progress") return "done";
-    if (status === "blocked") return "in_progress";
-    if (status === "waiting") return "in_progress";
-    if (status === "done") return "todo";
-    if (status === "failed") return "todo";
-    return "todo";
-  };
 
-  const onDragStart = (event: React.DragEvent<HTMLElement>, taskId: string) => {
-    event.dataTransfer.setData("text/plain", taskId);
-    event.dataTransfer.effectAllowed = "move";
-  };
-
-  const [dragOver, setDragOver] = useState<TaskStatus | null>(null);
-
-  const onDrop = async (event: React.DragEvent<HTMLDivElement>, status: TaskStatus) => {
-    event.preventDefault();
-    const taskId = event.dataTransfer.getData("text/plain");
-    setDragOver(null);
-    if (!taskId) return;
-    await moveTask({ id: taskId as never, status });
-  };
-
-  const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  };
-
-  const onDragEnter = (status: TaskStatus) => setDragOver(status);
-  const onDragLeave = () => setDragOver(null);
-
-  const openEdit = (task: Task) => {
-    setEditing(task);
-    setEditTitle(task.title);
-    setEditDescription(task.description ?? "");
-    setEditStatus(task.status);
-    setEditSource(task.source);
-    setEditTaskType(task.taskType);
-    setEditLastAction(task.lastAction ?? "");
-    setEditRelatedId(task.relatedId ?? "");
-    setEditErrorMessage(task.errorMessage ?? "");
-  };
-
-  const saveEdit = async () => {
-    if (!editing) return;
-    await taskLog.updateTaskLog({
-      id: editing._id as never,
-      title: editTitle.trim(),
-      description: editDescription.trim() || undefined,
-      status: editStatus,
-      source: editSource,
-      taskType: editTaskType,
-      lastAction: editLastAction.trim() || undefined,
-      relatedId: editRelatedId.trim() || undefined,
-      errorMessage: editErrorMessage.trim() || undefined,
-      lastActionAt: Date.now(),
-    });
-    setEditing(null);
-  };
 
   const formatTime = (value?: number) =>
     value ? new Date(value).toLocaleString(locale) : dict.common.notAvailable;
@@ -249,12 +143,6 @@ export default function Home() {
         <div className={styles.headerTop}>
           <h1>{dict.taskBoard.title}</h1>
           <div className={styles.localeToggle}>
-            <button type="button" onClick={() => setLocale("zh")} className={locale === "zh" ? styles.localeActive : ""}>
-              中文
-            </button>
-            <button type="button" onClick={() => setLocale("en")} className={locale === "en" ? styles.localeActive : ""}>
-              EN
-            </button>
           </div>
         </div>
         <p>{dict.taskBoard.subtitle}</p>
@@ -337,9 +225,6 @@ export default function Home() {
             key={column.key}
             className={`${styles.column} ${dragOver === column.key ? styles.columnActive : ""}`}
             onDrop={(event) => onDrop(event, column.key)}
-            onDragOver={onDragOver}
-            onDragEnter={() => onDragEnter(column.key)}
-            onDragLeave={onDragLeave}
           >
             <div className={styles.columnHeader}>
               <h2>{column.label}</h2>
@@ -350,8 +235,6 @@ export default function Home() {
                 <article
                   key={task._id}
                   className={styles.taskCard}
-                  draggable
-                  onDragStart={(event) => onDragStart(event, task._id)}
                 >
                   <div className={styles.taskTopRow}>
                     <h3>{task.title}</h3>
@@ -369,23 +252,6 @@ export default function Home() {
                     </span>
                   </div>
                   <div className={styles.actions}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        taskLog.setTaskStatus({
-                          id: task._id as never,
-                          status: nextStatus(task.status),
-                          lastAction: `moved_to:${nextStatus(task.status)}`,
-                          relatedId: task.relatedId,
-                          errorMessage: task.errorMessage,
-                        })
-                      }
-                    >
-                      {dict.taskBoard.moveTo} {statusColumns.find((s) => s.key === nextStatus(task.status))?.label}
-                    </button>
-                    <button type="button" onClick={() => openEdit(task)}>
-                      {dict.common.edit}
-                    </button>
                     <button type="button" onClick={() => deleteTask(task._id)}>
                       {dict.common.delete}
                     </button>
@@ -400,42 +266,7 @@ export default function Home() {
         ))}
       </section>
 
-      {editing && (
-        <div className={styles.modalBackdrop}>
-          <div className={styles.modal}>
-            <h3>{dict.taskBoard.editTask}</h3>
-            <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
-            <input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
-            <select value={editStatus} onChange={(e) => setEditStatus(e.target.value as TaskStatus)}>
-              {statusColumns.map((s) => (
-                <option key={s.key} value={s.key}>{s.label}</option>
-              ))}
             </select>
-            <select value={editSource} onChange={(e) => setEditSource(e.target.value as TaskSource)}>
-              {Object.entries(sourceLabels).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-            <select value={editTaskType} onChange={(e) => setEditTaskType(e.target.value as TaskType)}>
-              {Object.entries(typeLabels).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-            <input
-              value={editLastAction}
-              onChange={(e) => setEditLastAction(e.target.value)}
-              placeholder={dict.taskBoard.lastActionInput}
-            />
-            <input
-              value={editRelatedId}
-              onChange={(e) => setEditRelatedId(e.target.value)}
-              placeholder={dict.taskBoard.relatedIdInput}
-            />
-            <input
-              value={editErrorMessage}
-              onChange={(e) => setEditErrorMessage(e.target.value)}
-              placeholder={dict.taskBoard.errorMessageInput}
-            />
             <div className={styles.modalActions}>
               <button type="button" onClick={() => setEditing(null)}>{dict.common.cancel}</button>
               <button type="button" onClick={saveEdit}>{dict.common.save}</button>
