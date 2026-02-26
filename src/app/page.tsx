@@ -34,7 +34,7 @@ type Task = {
 const statusKeys: TaskStatus[] = ["todo", "in_progress", "blocked", "waiting", "done", "failed", "canceled"];
 
 export default function Home() {
-  const { locale, setLocale, dict } = useI18n();
+  const { locale, dict } = useI18n();
   const statusColumns = useMemo(
     () => statusKeys.map((key) => ({ key, label: dict.statuses[key] })),
     [dict],
@@ -223,8 +223,7 @@ export default function Home() {
         {statusColumns.map((column) => (
           <div
             key={column.key}
-            className={`${styles.column} ${dragOver === column.key ? styles.columnActive : ""}`}
-            onDrop={(event) => onDrop(event, column.key)}
+            className={styles.column}
           >
             <div className={styles.columnHeader}>
               <h2>{column.label}</h2>
@@ -265,11 +264,6 @@ export default function Home() {
           </div>
         ))}
       </section>
-
-            </select>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
