@@ -15,7 +15,6 @@ type TaskStatus =
   | "done"
   | "failed"
   | "canceled";
-type Assignee = "me" | "you";
 type TaskSource = "user" | "agent" | "subagent" | "cron";
 type TaskType = "coding" | "browsing" | "message" | "ops" | "analysis";
 
@@ -24,7 +23,6 @@ type Task = {
   title: string;
   description?: string;
   status: TaskStatus;
-  assignee: Assignee;
   source: TaskSource;
   taskType: TaskType;
   lastAction?: string;
@@ -42,10 +40,6 @@ export default function Home() {
     () => statusKeys.map((key) => ({ key, label: dict.statuses[key] })),
     [dict],
   );
-  const assigneeLabels: Record<Assignee, string> = {
-    me: dict.common.me,
-    you: dict.common.you,
-  };
   const sourceLabels: Record<TaskSource, string> = dict.sources;
   const typeLabels: Record<TaskType, string> = dict.taskTypes;
 
@@ -67,7 +61,6 @@ export default function Home() {
       title: string;
       description?: string;
       status?: TaskStatus;
-      assignee?: Assignee;
       source?: TaskSource;
       taskType?: TaskType;
       lastAction?: string;
@@ -80,7 +73,6 @@ export default function Home() {
       title?: string;
       description?: string;
       status?: TaskStatus;
-      assignee?: Assignee;
       source?: TaskSource;
       taskType?: TaskType;
       lastAction?: string;
@@ -106,7 +98,6 @@ export default function Home() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [assignee, setAssignee] = useState<Assignee>("me");
   const [source, setSource] = useState<TaskSource>("user");
   const [taskType, setTaskType] = useState<TaskType>("coding");
   const [relatedId, setRelatedId] = useState("");
@@ -116,7 +107,6 @@ export default function Home() {
   const [editing, setEditing] = useState<Task | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
-  const [editAssignee, setEditAssignee] = useState<Assignee>("me");
   const [editStatus, setEditStatus] = useState<TaskStatus>("todo");
   const [editSource, setEditSource] = useState<TaskSource>("user");
   const [editTaskType, setEditTaskType] = useState<TaskType>("coding");
@@ -125,7 +115,6 @@ export default function Home() {
   const [editErrorMessage, setEditErrorMessage] = useState("");
 
   const [query, setQuery] = useState("");
-  const [assigneeFilter, setAssigneeFilter] = useState<"all" | Assignee>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | TaskStatus>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | TaskSource>("all");
   const [taskTypeFilter, setTaskTypeFilter] = useState<"all" | TaskType>("all");
@@ -133,14 +122,13 @@ export default function Home() {
   const filteredTasks = useMemo(() => {
     const q = query.trim().toLowerCase();
     return tasks.filter((task) => {
-      const matchesAssignee = assigneeFilter === "all" || task.assignee === assigneeFilter;
       const matchesStatus = statusFilter === "all" || task.status === statusFilter;
       const matchesSource = sourceFilter === "all" || task.source === sourceFilter;
       const matchesType = taskTypeFilter === "all" || task.taskType === taskTypeFilter;
       const matchesQuery = !q || task.title.toLowerCase().includes(q) || (task.description ?? "").toLowerCase().includes(q);
-      return matchesAssignee && matchesStatus && matchesSource && matchesType && matchesQuery;
+      return matchesStatus && matchesSource && matchesType && matchesQuery;
     });
-  }, [tasks, query, assigneeFilter, statusFilter, sourceFilter, taskTypeFilter]);
+  }, [tasks, query, statusFilter, sourceFilter, taskTypeFilter]);
 
   const grouped = useMemo(() => {
     return statusKeys.reduce<Record<TaskStatus, Task[]>>(
@@ -185,7 +173,6 @@ export default function Home() {
       title: cleanedTitle,
       description: description.trim() || undefined,
       status: "todo",
-      assignee,
       source,
       taskType,
       relatedId: relatedId.trim() || undefined,
@@ -194,7 +181,6 @@ export default function Home() {
     });
     setTitle("");
     setDescription("");
-    setAssignee("me");
     setSource("user");
     setTaskType("coding");
     setRelatedId("");
@@ -239,7 +225,6 @@ export default function Home() {
     setEditing(task);
     setEditTitle(task.title);
     setEditDescription(task.description ?? "");
-    setEditAssignee(task.assignee);
     setEditStatus(task.status);
     setEditSource(task.source);
     setEditTaskType(task.taskType);
@@ -255,7 +240,6 @@ export default function Home() {
       title: editTitle.trim(),
       description: editDescription.trim() || undefined,
       status: editStatus,
-      assignee: editAssignee,
       source: editSource,
       taskType: editTaskType,
       lastAction: editLastAction.trim() || undefined,
@@ -294,15 +278,6 @@ export default function Home() {
           placeholder={dict.taskBoard.searchTasks}
           aria-label={dict.taskBoard.searchTasks}
         />
-        <select
-          value={assigneeFilter}
-          onChange={(e) => setAssigneeFilter(e.target.value as "all" | Assignee)}
-          aria-label={dict.taskBoard.filterAssignee}
-        >
-          <option value="all">{dict.common.all}</option>
-          <option value="me">{dict.taskBoard.assignedToMe}</option>
-          <option value="you">{dict.taskBoard.assignedToYou}</option>
-        </select>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | TaskStatus)} aria-label={dict.taskBoard.filterStatus}>
           <option value="all">{dict.taskBoard.allStatuses}</option>
           {statusColumns.map((s) => (
@@ -337,14 +312,6 @@ export default function Home() {
           placeholder={dict.taskBoard.taskDescription}
           aria-label={dict.taskBoard.taskDescription}
         />
-        <select
-          value={assignee}
-          onChange={(e) => setAssignee(e.target.value as Assignee)}
-          aria-label={dict.taskBoard.filterAssignee}
-        >
-          <option value="me">{dict.taskBoard.assignToMe}</option>
-          <option value="you">{dict.taskBoard.assignToYou}</option>
-        </select>
         <button type="button" onClick={() => setShowAdvancedCreate((prev) => !prev)} className={styles.secondaryButton}>
           {showAdvancedCreate ? dict.taskBoard.hideAdvanced : dict.taskBoard.advanced}
         </button>
@@ -423,7 +390,6 @@ export default function Home() {
                 >
                   <div className={styles.taskTopRow}>
                     <h3>{task.title}</h3>
-                    <span className={styles.assignee}>{assigneeLabels[task.assignee]}</span>
                   </div>
                   {task.description && <p>{task.description}</p>}
                   <div className={styles.meta}>
@@ -452,19 +418,6 @@ export default function Home() {
                     >
                       {dict.taskBoard.moveTo} {statusColumns.find((s) => s.key === nextStatus(task.status))?.label}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        taskLog.updateTaskLog({
-                          id: task._id as never,
-                          assignee: task.assignee === "me" ? "you" : "me",
-                          lastAction: "assignee_changed",
-                          lastActionAt: Date.now(),
-                        })
-                      }
-                    >
-                      {dict.taskBoard.assignTo} {task.assignee === "me" ? dict.common.you : dict.common.me}
-                    </button>
                     <button type="button" onClick={() => openEdit(task)}>
                       {dict.common.edit}
                     </button>
@@ -488,10 +441,6 @@ export default function Home() {
             <h3>{dict.taskBoard.editTask}</h3>
             <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
             <input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
-            <select value={editAssignee} onChange={(e) => setEditAssignee(e.target.value as Assignee)}>
-              <option value="me">{dict.common.me}</option>
-              <option value="you">{dict.common.you}</option>
-            </select>
             <select value={editStatus} onChange={(e) => setEditStatus(e.target.value as TaskStatus)}>
               {statusColumns.map((s) => (
                 <option key={s.key} value={s.key}>{s.label}</option>

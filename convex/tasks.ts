@@ -64,7 +64,7 @@ export const create = mutation({
       lastActionAt: args.lastActionAt ?? now,
       relatedId: args.relatedId?.trim() || undefined,
       errorMessage: args.errorMessage?.trim() || undefined,
-      assignee: args.assignee ?? "me",
+      assignee: args.assignee ?? "you",
       createdAt: now,
       updatedAt: now,
     });

@@ -5,17 +5,22 @@ import { usePathname } from "next/navigation";
 import styles from "./NavTabs.module.css";
 import { useI18n } from "../i18n/I18nProvider";
 
+const SHOW_EXTRAS = false;
+
 export function NavTabs() {
   const pathname = usePathname();
   const { dict } = useI18n();
-  const tabs = [
+  const baseTabs = [
     { href: "/", label: dict.nav.tasks },
     { href: "/calendar", label: dict.nav.calendar },
     { href: "/memory", label: dict.nav.memory },
+  ];
+  const extraTabs = [
     { href: "/pipeline", label: dict.nav.pipeline },
     { href: "/team", label: dict.nav.team },
     { href: "/office", label: dict.nav.office },
   ];
+  const tabs = SHOW_EXTRAS ? [...baseTabs, ...extraTabs] : baseTabs;
   return (
     <nav className={styles.nav}>
       {tabs.map((tab) => {

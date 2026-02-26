@@ -10,7 +10,8 @@ A realtime task board built with Next.js App Router and Convex.
 - **Content Pipeline**: track content lifecycle (`idea`, `drafting`, `review`, `published`)
 - **Team**: maintain roster, role, focus, and availability (`active`, `away`)
 - **Office**: shared policies/tools/links/notes reference board
-- **System Status panel**: current running process IDs (from in-progress tasks with `relatedId`) and latest update timestamps
+- **System Status panel**: moved into a compact collapsible card in Task Board (collapsed by default)
+- **Create Task (Basic + Advanced)**: basic fields stay visible, advanced task-log fields are behind a toggle
 - Realtime updates via Convex subscriptions
 
 ## Tech Stack
@@ -73,6 +74,13 @@ npm run dev
 
 - Run `npx convex dev` whenever developing Convex functions to keep generated files up-to-date.
 - If `NEXT_PUBLIC_CONVEX_URL` is missing, the app throws an explicit startup error.
+
+## UX toggles
+
+- Navigation extras (`Content Pipeline`, `Team`, `Office`) can be hidden with a simple code flag:
+  - Edit `src/app/components/NavTabs.tsx`
+  - Set `SHOW_EXTRAS = false` (default) to hide extras
+  - Set `SHOW_EXTRAS = true` to show extras tabs
 
 ## i18n (zh/en)
 
