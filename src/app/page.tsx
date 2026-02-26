@@ -267,10 +267,6 @@ export default function Home() {
       </section>
 
             </select>
-            <div className={styles.modalActions}>
-              <button type="button" onClick={() => setEditing(null)}>{dict.common.cancel}</button>
-              <button type="button" onClick={saveEdit}>{dict.common.save}</button>
-            </div>
           </div>
         </div>
       )}
