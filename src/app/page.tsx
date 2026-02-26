@@ -61,6 +61,7 @@ export default function Home() {
   const createTask = useMutation("tasks:create" as never);
   const moveTask = useMutation("tasks:move" as never);
   const updateTask = useMutation("tasks:update" as never);
+  const removeTask = useMutation("tasks:remove" as never);
   const taskLog = useMemo(() => {
     const createTaskMutation = (args: {
       title: string;
@@ -98,12 +99,20 @@ export default function Home() {
     return createTaskLogApi(createTaskMutation, updateTaskMutation, moveTaskMutation);
   }, [createTask, moveTask, updateTask]);
 
+  const deleteTask = async (taskId: string) => {
+    if (!confirm(dict.taskBoard.confirmDelete)) return;
+    await removeTask({ id: taskId as never });
+  };
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [assignee, setAssignee] = useState<Assignee>("me");
   const [source, setSource] = useState<TaskSource>("user");
   const [taskType, setTaskType] = useState<TaskType>("coding");
   const [relatedId, setRelatedId] = useState("");
+  const [lastAction, setLastAction] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showAdvancedCreate, setShowAdvancedCreate] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -180,7 +189,8 @@ export default function Home() {
       source,
       taskType,
       relatedId: relatedId.trim() || undefined,
-      lastAction: "created",
+      lastAction: lastAction.trim() || "created",
+      errorMessage: errorMessage.trim() || undefined,
     });
     setTitle("");
     setDescription("");
@@ -188,6 +198,8 @@ export default function Home() {
     setSource("user");
     setTaskType("coding");
     setRelatedId("");
+    setLastAction("");
+    setErrorMessage("");
   };
 
   const nextStatus = (status: TaskStatus): TaskStatus => {
@@ -275,7 +287,7 @@ export default function Home() {
       </section>
       <NavTabs />
 
-      <form onSubmit={onCreateTask} className={styles.createForm}>
+      <section className={styles.filterBar}>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -309,6 +321,9 @@ export default function Home() {
             <option key={value} value={value}>{label}</option>
           ))}
         </select>
+      </section>
+
+      <form onSubmit={onCreateTask} className={styles.createForm}>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -330,41 +345,61 @@ export default function Home() {
           <option value="me">{dict.taskBoard.assignToMe}</option>
           <option value="you">{dict.taskBoard.assignToYou}</option>
         </select>
-        <select value={source} onChange={(e) => setSource(e.target.value as TaskSource)} aria-label={dict.taskBoard.filterSource}>
-          {Object.entries(sourceLabels).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-        <select value={taskType} onChange={(e) => setTaskType(e.target.value as TaskType)} aria-label={dict.taskBoard.filterType}>
-          {Object.entries(typeLabels).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-        <input
-          value={relatedId}
-          onChange={(e) => setRelatedId(e.target.value)}
-          placeholder={dict.taskBoard.relatedIdOptional}
-          aria-label={dict.taskBoard.relatedId}
-        />
+        <button type="button" onClick={() => setShowAdvancedCreate((prev) => !prev)} className={styles.secondaryButton}>
+          {showAdvancedCreate ? dict.taskBoard.hideAdvanced : dict.taskBoard.advanced}
+        </button>
         <button type="submit">{dict.taskBoard.addTask}</button>
+        {showAdvancedCreate && (
+          <div className={styles.advancedFields}>
+            <select value={source} onChange={(e) => setSource(e.target.value as TaskSource)} aria-label={dict.taskBoard.filterSource}>
+              {Object.entries(sourceLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+            <select value={taskType} onChange={(e) => setTaskType(e.target.value as TaskType)} aria-label={dict.taskBoard.filterType}>
+              {Object.entries(typeLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+            <input
+              value={relatedId}
+              onChange={(e) => setRelatedId(e.target.value)}
+              placeholder={dict.taskBoard.relatedIdOptional}
+              aria-label={dict.taskBoard.relatedId}
+            />
+            <input
+              value={lastAction}
+              onChange={(e) => setLastAction(e.target.value)}
+              placeholder={dict.taskBoard.lastActionInput}
+              aria-label={dict.taskBoard.lastAction}
+            />
+            <input
+              value={errorMessage}
+              onChange={(e) => setErrorMessage(e.target.value)}
+              placeholder={dict.taskBoard.errorMessageInput}
+              aria-label={dict.taskBoard.error}
+            />
+          </div>
+        )}
       </form>
 
-      <section className={styles.systemStatus}>
-        <h2>{dict.taskBoard.systemStatus}</h2>
-        <p>{dict.taskBoard.latestTaskUpdate}: {formatTime(latestTaskUpdateAt)}</p>
-        <p>{dict.taskBoard.latestActionUpdate}: {formatTime(latestActionAt)}</p>
-        <p>{dict.taskBoard.runningProcesses}: {runningProcesses.length}</p>
-        <div className={styles.processList}>
-          {runningProcesses.length === 0 && <span className={styles.emptyInline}>{dict.taskBoard.noRunningProcessIds}</span>}
-          {runningProcesses.map((task) => (
-            <span key={task._id} className={styles.processItem}>
-              {task.relatedId} ({task.title})
-            </span>
-          ))}
-        </div>
-      </section>
-
       <section className={styles.board}>
+        <details className={styles.systemStatus} open={false}>
+          <summary>{dict.taskBoard.systemStatus}</summary>
+          <div className={styles.systemStatusBody}>
+            <p>{dict.taskBoard.latestTaskUpdate}: {formatTime(latestTaskUpdateAt)}</p>
+            <p>{dict.taskBoard.latestActionUpdate}: {formatTime(latestActionAt)}</p>
+            <p>{dict.taskBoard.runningProcesses}: {runningProcesses.length}</p>
+            <div className={styles.processList}>
+              {runningProcesses.length === 0 && <span className={styles.emptyInline}>{dict.taskBoard.noRunningProcessIds}</span>}
+              {runningProcesses.map((task) => (
+                <span key={task._id} className={styles.processItem}>
+                  {task.relatedId} ({task.title})
+                </span>
+              ))}
+            </div>
+          </div>
+        </details>
         {statusColumns.map((column) => (
           <div
             key={column.key}
@@ -432,6 +467,9 @@ export default function Home() {
                     </button>
                     <button type="button" onClick={() => openEdit(task)}>
                       {dict.common.edit}
+                    </button>
+                    <button type="button" onClick={() => deleteTask(task._id)}>
+                      {dict.common.delete}
                     </button>
                   </div>
                 </article>

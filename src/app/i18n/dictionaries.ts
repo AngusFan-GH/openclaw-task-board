@@ -16,10 +16,12 @@ export type Dictionary = {
     cancel: string;
     save: string;
     edit: string;
+    delete: string;
     me: string;
     you: string;
   };
   taskBoard: {
+    confirmDelete: string;
     title: string;
     subtitle: string;
     searchTasks: string;
@@ -37,6 +39,8 @@ export type Dictionary = {
     assignToMe: string;
     assignToYou: string;
     relatedIdOptional: string;
+    advanced: string;
+    hideAdvanced: string;
     addTask: string;
     systemStatus: string;
     latestTaskUpdate: string;
@@ -80,10 +84,12 @@ export const dictionaries: Record<Locale, Dictionary> = {
       cancel: "取消",
       save: "保存",
       edit: "编辑",
+      delete: "删除",
       me: "我",
       you: "你",
     },
     taskBoard: {
+      confirmDelete: "确认删除该任务？",
       title: "任务指挥台",
       subtitle: "任务、日历和记忆集中管理。",
       searchTasks: "搜索任务",
@@ -101,6 +107,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
       assignToMe: "指派给我",
       assignToYou: "指派给你",
       relatedIdOptional: "关联 ID（可选）",
+      advanced: "高级",
+      hideAdvanced: "隐藏高级",
       addTask: "添加任务",
       systemStatus: "系统状态",
       latestTaskUpdate: "最近任务更新时间",
@@ -161,10 +169,12 @@ export const dictionaries: Record<Locale, Dictionary> = {
       cancel: "Cancel",
       save: "Save",
       edit: "Edit",
+      delete: "Delete",
       me: "Me",
       you: "You",
     },
     taskBoard: {
+      confirmDelete: "Delete this task?",
       title: "Mission Control",
       subtitle: "Tasks, calendar, and memory in one place.",
       searchTasks: "Search tasks",
@@ -182,6 +192,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
       assignToMe: "Assign to Me",
       assignToYou: "Assign to You",
       relatedIdOptional: "Related ID (optional)",
+      advanced: "Advanced",
+      hideAdvanced: "Hide Advanced",
       addTask: "Add Task",
       systemStatus: "System Status",
       latestTaskUpdate: "Latest task update",
